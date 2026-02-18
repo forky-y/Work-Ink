@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Browser Extension Popup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg-deep: #080b12;
+        --bg-navy: #0d1220;
+        --surface: rgba(255, 255, 255, 0.03);
+        --surface-hover: rgba(255, 255, 255, 0.06);
+        --surface-border: rgba(255, 255, 255, 0.08);
+        --surface-border-hover: rgba(255, 255, 255, 0.14);
+        --gold: #d4a54a;
+        --gold-dim: #a8833b;
+        --gold-glow: rgba(212, 165, 74, 0.15);
+        --gold-glow-strong: rgba(212, 165, 74, 0.25);
+        --text-primary: #e8ecf4;
+        --text-secondary: #8b93a1;
+        --text-dim: #555d6e;
+      }
+
+      body {
+        width: 340px;
+        min-height: 200px;
+        background: var(--bg-deep);
+        font-family: "Manrope", sans-serif;
+        color: var(--text-primary);
+        position: relative;
+        overflow: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background:
+          radial-gradient(
+            ellipse at 20% 20%,
+            rgba(212, 165, 74, 0.04) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 80% 80%,
+            rgba(100, 120, 180, 0.03) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .popup {
+        position: relative;
+        z-index: 2;
+        padding: 22px 20px 20px;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        animation: fadeIn 0.5s ease both;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo-mark {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(145deg, var(--gold), var(--gold-dim));
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.3),
+          0 0 20px var(--gold-glow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      }
+
+      .logo-mark::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 10px;
+        padding: 1px;
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        mask-composite: xor;
+        -webkit-mask-composite: xor;
+        pointer-events: none;
+      }
+
+      .logo-mark svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--bg-deep);
+        fill: none;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+      }
+
+      .brand-info h1 {
+        font-family: "Sora", sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: var(--text-primary);
+        line-height: 1;
+      }
+
+      .brand-info .tagline {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+        font-weight: 500;
+      }
+
+      .header-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        background: var(--gold);
+        border-radius: 50%;
+        box-shadow: 0 0 8px var(--gold-glow-strong);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .header-status.active {
+        color: var(--gold);
+        border-color: rgba(212, 165, 74, 0.2);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.6;
+          transform: scale(0.9);
+        }
+      }
+
+      .divider {
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--surface-border),
+          transparent
+        );
+        margin-bottom: 20px;
+        animation: fadeIn 0.5s ease 0.1s both;
+      }
+
+      .menu-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .menu-item {
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        font-family: "Manrope", sans-serif;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--text-primary);
+        text-decoration: none;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .menu-item::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          var(--gold-glow) 0%,
+          transparent 50%
+        );
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+
+      .menu-item:nth-child(1) {
+        animation: slideUp 0.4s ease 0.15s both;
+      }
+      .menu-item:nth-child(2) {
+        animation: slideUp 0.4s ease 0.2s both;
+      }
+      .menu-item:nth-child(3) {
+        animation: slideUp 0.4s ease 0.25s both;
+      }
+
+      .menu-item:hover {
+        border-color: var(--surface-border-hover);
+        background: var(--surface-hover);
+        transform: translateY(-2px);
+        box-shadow:
+          0 4px 20px rgba(0, 0, 0, 0.2),
+          0 0 30px var(--gold-glow);
+      }
+
+      .menu-item:hover::before {
+        opacity: 1;
+      }
+
+      .menu-item:active {
+        transform: translateY(0);
+      }
+
+      .menu-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+      }
+
+      .menu-icon.gold {
+        background: var(--gold-glow);
+        border: 1px solid rgba(212, 165, 74, 0.2);
+      }
+
+      .menu-icon.gold svg {
+        stroke: var(--gold);
+      }
+
+      .menu-icon.muted {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--surface-border);
+      }
+
+      .menu-icon.muted svg {
+        stroke: var(--text-secondary);
+      }
+
+      .menu-icon svg {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .menu-content {
+        flex: 1;
+        position: relative;
+        z-index: 1;
+      }
+
+      .menu-label {
+        display: block;
+        font-weight: 600;
+      }
+
+      .menu-desc {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-top: 2px;
+        font-weight: 400;
+      }
+
+      .menu-arrow {
+        color: var(--text-dim);
+        font-size: 18px;
+        transition: all 0.25s ease;
+        line-height: 1;
+        position: relative;
+        z-index: 1;
+      }
+
+      .menu-item:hover .menu-arrow {
+        color: var(--gold);
+        transform: translateX(3px);
+      }
+
+      .footer {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--surface-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        animation: fadeIn 0.5s ease 0.4s both;
+      }
+
+      .footer-link {
+        font-size: 11px;
+        color: var(--text-dim);
+        text-decoration: none;
+        font-weight: 500;
+        padding: 5px 10px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+      }
+
+      .footer-link:hover {
+        color: var(--gold);
+        background: var(--gold-glow);
+      }
+
+      .footer-sep {
+        color: var(--surface-border);
+        font-size: 10px;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="popup">
+      <header class="header">
+        <div class="brand">
+          <div class="brand-info">
+            <h1>Forky Bypass</h1>
+            <span class="tagline">Work.ink Bypass</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="divider"></div>
+
+      <nav class="menu-list">
+
+
+        <a class="menu-item" href="#"> <!-- TODO -->
+          <div class="menu-content">
+            <span class="menu-label">Settings</span>
+            <span class="menu-desc">Access the Settings for the Extension.</span>
+          </div>
+          <span class="menu-arrow">›</span>
+        </a>
+
+        <a class="menu-item" href="https://discord.gg/JYubHC89y4">
+
+          <div class="menu-content">
+            <span class="menu-label">Get Support</span>
+            <span class="menu-desc">Join our Discord</span>
+          </div>
+          <span class="menu-arrow">›</span>
+        </a>
+      </nav>
+
+      <footer class="footer">
+        <span class="footer-sep">•</span>
+        <a href="https://github.com/forky-y/" class="footer-link">Website</a>
+        <span class="footer-sep">•</span>
+      </footer>
+    </div>
+  </body>
+</html>
+
+<script src="popup.js" type="module"></script>

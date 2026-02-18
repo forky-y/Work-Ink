@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Forky Bypass",
+  "version": "1.0.2",
+  "description": "Forky Bypass is a work.ink bypasser written in TypeScript",
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://work.ink/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
